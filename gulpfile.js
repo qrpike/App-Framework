@@ -1,30 +1,30 @@
 
 
 // Required Modules:
-var gulp 		= require('gulp');
+var gulp 			= require('gulp');
 var runSequence 	= require('gulp-run-sequence');
-var path 		= require('path');
-var less 		= require('gulp-less');
-var concat 		= require('gulp-concat');
-var gutil 		= require('gulp-util');
-var browserSync = require('browser-sync');
-var reload 		= browserSync.reload;
-var size 		= require('gulp-size');
-var uglify		= require('gulp-uglify');
-var _ 			= require('underscore');
-var buffer 		= require('vinyl-buffer');
-var nodeResolve = require('resolve');
-var browserify 	= require('browserify');
-var source 		= require('vinyl-source-stream');
-var minifyCSS 	= require('gulp-minify-css');
-var karma 		= require('gulp-karma');
+var path 			= require('path');
+var less 			= require('gulp-less');
+var concat 			= require('gulp-concat');
+var gutil 			= require('gulp-util');
+var browserSync 	= require('browser-sync');
+var reload 			= browserSync.reload;
+var size 			= require('gulp-size');
+var uglify			= require('gulp-uglify');
+var _ 				= require('underscore');
+var buffer 			= require('vinyl-buffer');
+var nodeResolve 	= require('resolve');
+var browserify 		= require('browserify');
+var source 			= require('vinyl-source-stream');
+var minifyCSS 		= require('gulp-minify-css');
+var karma 			= require('gulp-karma');
 var autoprefixer 	= require('gulp-autoprefixer');
-var sourcemaps 	= require('gulp-sourcemaps');
-var stylish 	= require('jshint-stylish');
-var jshint 		= require('gulp-jshint');
+var sourcemaps 		= require('gulp-sourcemaps');
+var stylish 		= require('jshint-stylish');
+var jshint 			= require('gulp-jshint');
 var htmlreplace 	= require('gulp-html-replace');
-var del 		= require('del');
-var imagemin 	= require('gulp-imagemin');
+var del 			= require('del');
+var imagemin 		= require('gulp-imagemin');
 
 
 
