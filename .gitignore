@@ -29,4 +29,6 @@ node_modules
 
 .DS_Store
 
+# Ignore build files:
 app/js/bundles
+app/style/css

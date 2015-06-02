@@ -15,9 +15,10 @@ var buffer 		= require('vinyl-buffer');
 var nodeResolve = require('resolve');
 var browserify 	= require('browserify');
 var source 		= require('vinyl-source-stream');
+var minifyCSS 	= require('gulp-minify-css');
 var karma 		= require('gulp-karma');
-
-
+var autoprefixer 	= require('gulp-autoprefixer');
+var sourcemaps 	= require('gulp-sourcemaps');
 
 /*
 	SETTINGS:
@@ -88,26 +89,41 @@ gulp.task('build', ['less', 'build-common-lib', 'build-app-lib']);
 
 
 // LESS Compilation
-gulp.task('less', function () {
-	return gulp.src([
+gulp.task('less', function (){
+	var stream = gulp.src([
 			'./app/style/site.less',
 			'./app/js/pages/**/*.less',
 			'./app/js/components/**/*.less'
 		])
+		.pipe(sourcemaps.init())
 		.pipe(less({
 			paths: [
 				path.join(__dirname, './node_modules'),
 				path.join(__dirname, './app/style')
 			]
 		}).on('error', gutil.log))
-		.pipe(concat('site.css'))
+		.pipe(concat('site.css'));
+
+	// If production, compress css:
+	if(gulp.env.production){
+		stream = stream
+			.pipe(minifyCSS());
+
+	// If dev mode:
+	}else{
+		// sourcemap LESS files, easy debugging:
+		stream = stream
+			.pipe(sourcemaps.write('.'));
+	}
+	
+	return stream
 		.pipe(gulp.dest('./app/style/css/'))
 		.pipe(reload({stream: true}));
 });
 
 
 // Run Karma tests on this app:
-gulp.task('test', function() {
+gulp.task('test', function(){
 	return gulp.src(TEST_FILES)
 		.pipe(karma({
 			configFile: 'local.karma.conf.js',
