@@ -2,6 +2,7 @@
 
 // Required Modules:
 var gulp 		= require('gulp');
+var runSequence 	= require('gulp-run-sequence');
 var path 		= require('path');
 var less 		= require('gulp-less');
 var concat 		= require('gulp-concat');
@@ -19,6 +20,13 @@ var minifyCSS 	= require('gulp-minify-css');
 var karma 		= require('gulp-karma');
 var autoprefixer 	= require('gulp-autoprefixer');
 var sourcemaps 	= require('gulp-sourcemaps');
+var stylish 	= require('jshint-stylish');
+var jshint 		= require('gulp-jshint');
+var htmlreplace 	= require('gulp-html-replace');
+var del 		= require('del');
+var imagemin 	= require('gulp-imagemin');
+
+
 
 /*
 	SETTINGS:
@@ -47,9 +55,14 @@ const BROWSERIFY_TRANSFORMS = ["node-underscorify"];
 // Our main App file ( root file ):
 const APP_GLOB = "./app/js/app.js";
 
+// Injected prod variables: window._appconfig will equal the following:
+const APP_CONFIG_INJECTION = {
+	API_URL: 'https://api.domain.com'
+}
 
-
-
+// Where we should be putting the dev/prod files:
+var DEST_DIR = "./app" // This gets changed in the build task..
+var PROD = false; // This gets changed in the build task..
 
 
 /*
@@ -84,8 +97,68 @@ gulp.task('default', ['less', 'bundle-vendor', 'bundle-app'], function() {
 });
 
 
-// Same as default just doesn't start browser sync ( used for deploys ):
-gulp.task('build', ['less', 'build-common-lib', 'build-app-lib']);
+
+// Production build of the app:
+gulp.task('build', function(cb) {
+  runSequence('config-build', 'clean', ['lint', 'htmlreplace', 'less', 'bundle-vendor', 'bundle-app']);
+});
+// gulp.task('build', ['config-build']);
+gulp.task('config-build', function( cb ){
+	// Change options for Prod Build settings:
+	DEST_DIR = "./build";
+	PROD = true;
+	cb();
+});
+
+
+
+// Clean the build dir so we can do a clean build:
+gulp.task('clean', function( cb ){
+    del([ DEST_DIR ], cb);
+});
+
+
+
+// Copy all static images, and optimize them:
+gulp.task('images', function() {
+  return gulp.src([
+  		'./app/images/**/*'
+  	])
+    // Pass in options to the task
+    .pipe(imagemin({optimizationLevel: 5}))
+    .pipe(gulp.dest(DEST_DIR+'/img'));
+});
+
+
+
+// Lint / JShint your Javascript:
+gulp.task('lint', function(){
+	return gulp.src([
+			'./app/js/**/*.js',
+			// Dont lint the bundled files:
+			'!./app/js/bundles/**/*.js'
+		])
+		.pipe(jshint())
+		// Print results:
+		.pipe(jshint.reporter( stylish ))
+		// Fail on error, Stop build process if needed:
+		.pipe(jshint.reporter('fail'));
+});
+
+
+
+// HTML Replace if needed:
+// Be careful not to htmlreplace your src index.html
+gulp.task('htmlreplace', function() {
+	return gulp.src('./app/index.html')
+		.pipe(htmlreplace({
+			'conf': "<script>"+
+				"window._appconfig = " + JSON.stringify(APP_CONFIG_INJECTION)+
+				"</script>"
+		}))
+		.pipe(gulp.dest(DEST_DIR));
+});
+
 
 
 // LESS Compilation
@@ -105,7 +178,7 @@ gulp.task('less', function (){
 		.pipe(concat('site.css'));
 
 	// If production, compress css:
-	if(gulp.env.production){
+	if(PROD){
 		stream = stream
 			.pipe(minifyCSS());
 
@@ -117,9 +190,10 @@ gulp.task('less', function (){
 	}
 	
 	return stream
-		.pipe(gulp.dest('./app/style/css/'))
+		.pipe(gulp.dest(DEST_DIR+'/style/css/'))
 		.pipe(reload({stream: true}));
 });
+
 
 
 // Run Karma tests on this app:
@@ -135,10 +209,11 @@ gulp.task('test', function(){
 });
 
 
+
 // Bundle all the app specific JS files:
 gulp.task('bundle-app', function(){
 	var b = browserify( APP_GLOB, {
-		debug : !gulp.env.production,
+		debug : !PROD,
 		transform: BROWSERIFY_TRANSFORMS,
 		paths: [
 			path.join(__dirname, './app/js'),
@@ -153,23 +228,24 @@ gulp.task('bundle-app', function(){
 		.pipe(source('app.js'))
 		.pipe(buffer());
 
-	if(gulp.env.production){
+	if(PROD){
 		stream = stream.pipe(size(SIZE_OPTS))
 			.pipe(uglify())
 			.pipe(size(SIZE_OPTS));
 	}
 
-	return stream.pipe(gulp.dest('./app/js/bundles/'))
+	return stream.pipe(gulp.dest(DEST_DIR+'/js/bundles/'))
 		.pipe(reload({stream: true}));
 
 });
+
 
 
 // Bundle all the Vendor/3rd Party files:
 gulp.task("bundle-vendor", function(){
 
 	var b = browserify({
-		debug : !gulp.env.production,
+		debug : !PROD,
 		paths: [
 			path.join(__dirname, './app/js'),
 			path.join(__dirname, './app'),
@@ -186,13 +262,13 @@ gulp.task("bundle-vendor", function(){
 		.pipe(source('vendor.js'))
 		.pipe(buffer());
 
-	if(gulp.env.production){
+	if(PROD){
 		stream = stream.pipe(size(SIZE_OPTS))
 			.pipe(uglify())
 			.pipe(size(SIZE_OPTS));
 	}
 
-	return stream.pipe(gulp.dest('./app/js/bundles/'));
+	return stream.pipe(gulp.dest(DEST_DIR+'/js/bundles/'));
 
 });
 
